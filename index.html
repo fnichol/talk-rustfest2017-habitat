@@ -1,49 +1,781 @@
 <!doctype html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+    <title>reveal.js</title>
 
-		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/black.css">
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/rustfest2017.css">
 
-		<!-- Theme used for syntax highlighting of code -->
-		<link rel="stylesheet" href="lib/css/zenburn.css">
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
 
-		<!-- Printing and PDF exports -->
-		<script>
-			var link = document.createElement( 'link' );
-			link.rel = 'stylesheet';
-			link.type = 'text/css';
-			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
-			document.getElementsByTagName( 'head' )[0].appendChild( link );
-		</script>
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
-			</div>
-		</div>
+    <!-- Printing and PDF exports -->
+    <script>
+      var link = document.createElement( 'link' );
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+      document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+    <section class="title" data-background-image="img/theater--bnwQ5E.jpg" data-state="fade-bg">
+      <!-- https://flic.kr/p/bnwQ5E -->
+      <h1>Taking Rust to Production: Lessons Learned From the Habitat Project</h1>
+      <h2>Fletcher Nichol</h2>
+      <table>
+        <tr>
+          <td>RustFest 2017</td>
+          <td>April 30, 2017</td>
+          <td>Kyiv, Ukraine</td>
+        </tr>
+      </table>
+    </section>
+        <section>
+          <h1>Is Rust ready to be used in production?</h1>
+          <h2>Yes.</h2>
+          <aside class="notes">
+            <p>Stick around for more backstory</p>
+          </aside>
+        </section>
+        <section class="title" data-background-image="img/fnichol-drums.jpg" data-state="fade-bg" data-background-size="85%">
+          <ul>
+            <li>Fletcher Nichol</li>
+            <li>Twitter: <a href="https://twitter.com/fnichol">@fnichol</a></li>
+            <li>GitHub: <a href="https://twitter.com/fnichol">@fnichol</a></li>
+            <li>Rust Users: <a href="https://users.rust-lang.org/u/fnichol">@fnichol</a></li>
+            <li>Works on Habitat. Likes Rust. And summertime. Also, drums.</li>
+          </ul>
+        </section>
+    <section class="title" data-background-image="img/habitat-logo.png" data-background-size="85%">
+    </section>
+        <section>
+          <h2>Habitat</h2>
+          <div>
+            <div style="float: left; width: 32%;">
+              <img src="img/habitat-human-hug.png" style="border: none;"/>
+            </div>
+            <div style="float: left; width: 66%;">
+              <ul>
+                <li class="fragment">is a runtime system for your apps or other services</li>
+                <li class="fragment">provides realtime service configuration</li>
+                <li class="fragment">packages software with a deterministic build system</li>
+                <li class="fragment">loves your apps</li>
+                <li class="fragment">is primarily written in Rust</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+        <section class="title" data-background-image="img/habitat-website.png" data-state="fade-bg" data-background-size="85%">
+          <h2><a href="https://www.habitat.sh">https://www.habitat.sh</a></h2>
+        </section>
+    <section class="title" data-background-image="img/rust--T1jK1F.jpg" data-state="fade-bg">
+      <!-- https://flic.kr/p/T1jK1F -->
+      <h1>Why Rust?</h1>
+        <aside class="notes">
+          <h1>03:00</h1>
+        </aside>
+      </section>
+    </section>
+        <section class="title" data-background-image="img/habitat-alpine-meadow--eHXRWD.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/eHXRWD -->
+          <h2>This question comes up...</h2>
+          <aside class="notes">
+            <ul>
+              <li>one of the more frequently asked questions</li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>The Supervisor</h2>
+          <ul>
+            <li class="fragment">Small memory footprint</li>
+            <li class="fragment">Fast and responsive</li>
+            <li class="fragment">Low level system calls</li>
+            <li class="fragment">Can't crash</li>
+          </ul>
+          <aside class="notes">
+            <ul>
+              <li>low level system calls (fork, exec, signal handling)</li>
+              <li>could have been written in c, but I wouldn't be helping</li>
+            </ul>
+        </section>
+        <section>
+          <h2>Code reuse and sharing</h2>
+          <aside class="notes">
+            <ul>
+              <li>as we grew, split the Supervisor out, we made libraries</li>
+              <li>once you have common libs, writing more in Rust becomes easy</li>
+              <li>we decided to keep the server side components in Rust as well</li>
+            </ul>
+        </section>
+        <section>
+          <h2>Bonus: CLI tools</h2>
+          <aside class="notes">
+            <ul>
+              <li>I belive that Rust is especially nice for CLI tools</li>
+              <li>while cross-compiling story is getting better, still many Rust targets</li>
+              <li>it's possible to make small, static binaries which are a joy to deploy</li>
+            </ul>
+        </section>
+        <section>
+          <h2>Habitat Components in Rust</h2>
+          <ul>
+            <li class="fragment">The Supervisor</li>
+            <li class="fragment">The <code>hab</code> CLI</li>
+            <li class="fragment">A distributed build system (Builder)</li>
+          </ul>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+        </section>
+        <section>
+          <h2>It's a growing codebase</h2>
+          <pre><code data-trim class="line-numbers">
+> date
+Fri 28 Apr 2017 10:48:21 EEST
 
-		<script src="lib/js/head.min.js"></script>
-		<script src="js/reveal.js"></script>
+> cd habitat/
 
-		<script>
-			// More info about config & dependencies:
-			// - https://github.com/hakimel/reveal.js#configuration
-			// - https://github.com/hakimel/reveal.js#dependencies
-			Reveal.initialize({
-				dependencies: [
-					{ src: 'plugin/markdown/marked.js' },
-					{ src: 'plugin/markdown/markdown.js' },
-					{ src: 'plugin/notes/notes.js', async: true },
-					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
-				]
-			});
-		</script>
-	</body>
+> find . -name '*.rs' -exec cat {} \; \
+    | egrep -v '^\s*$' \
+    | egrep -v '^\s*//' \
+    | wc -l
+   78551
+          </code></pre>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+        </section>
+    <section class="title" data-background-image="img/rusty-truck-moss--nvSubP.jpg" data-state="fade-bg">
+      <!-- https://flic.kr/p/nvSubP -->
+      <h1>How Habitat Uses Rust</h1>
+      <aside class="notes">
+        <h1>08:00</h1>
+      </aside>
+    </section>
+        <section class="title" data-background-image="img/habitat-desert--7P5HSL.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/7P5HSL -->
+          <h2>Use native libraries</h2>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>External libraries</h2>
+          <table>
+            <tr class="fragment">
+              <th>libarchive</th>
+              <td>Archive reading and streaming</td>
+            </tr>
+            <tr class="fragment">
+              <th>libsodium</th>
+              <td>All crypto applications (minus client TLS)</td>
+            </tr>
+            <tr class="fragment">
+              <th>zeromq</th>
+              <td>rumor propagation, server communication</td>
+            </tr>
+            <tr class="fragment dim">
+              <th>OpenSSL</th>
+              <td>client TLS...for now...</td>
+            </tr>
+          </table>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <section class="title" data-background-image="img/habitat-lake-louise--cV2xbb.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/cV2xbb -->
+          <h2>Static compilation</h2>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>Build a dynamic binary</h2>
+          <pre><code data-trim>
+cargo build --release
+          </code></pre>
+        </section>
+        <section>
+          <h2>Dynamic binary: file</h2>
+          <pre><code data-trim class="line-numbers">
+> file target/x86_64-unknown-linux-gnu/release/hab
+target/x86_64-unknown-linux-gnu/release/hab: ELF 64-bit LSB »
+  shared object, x86-64, version 1 (SYSV), »
+  dynamically linked, »
+  interpreter /lib64/ld-linux-x86-64.so.2, »
+  for GNU/Linux 2.6.32, »
+  not stripped
+          </code></pre>
+        </section>
+        <section>
+          <h2>Dynamic binary: ldd</h2>
+          <pre><code data-trim class="line-numbers">
+> ldd target/x86_64-unknown-linux-gnu/release/hab
+    linux-vdso.so.1 (0x00007ffd2c66b000)
+    libssl.so.1.0.0 => /lib/x86_64-linux-gnu/libssl.so.1.0.0 (0x00007f6d524c4000)
+    libcrypto.so.1.0.0 => /lib/x86_64-linux-gnu/libcrypto.so.1.0.0 (0x00007f6d52071000)
+    libsodium.so.18 => /lib/x86_64-linux-gnu/libsodium.so.18 (0x00007f6d51db9000)
+    libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f6d51118000)
+    /lib64/ld-linux-x86-64.so.2 (0x00007f6d52735000)
+    libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007f6d50e1a000)
+    libz.so.1 => /lib/x86_64-linux-gnu/libz.so.1 (0x00007f6d50bff000)
+    liblzma.so.5 => /lib/x86_64-linux-gnu/liblzma.so.5 (0x00007f6d509cc000)
+    libbz2.so.1.0 => /lib/x86_64-linux-gnu/libbz2.so.1.0 (0x00007f6d507bc000)
+    ...
+          </code></pre>
+        </section>
+        <section>
+          <h2>musl</h2>
+          <blockquote>
+            <p>musl, a new <strong>standard library</strong> to power a new generation of Linux-based devices. musl is lightweight, fast, simple, free, and strives to be correct in the sense of standards-conformance and safety.</p>
+            <footer>- <a href="https://www.musl-libc.org/">https://www.musl-libc.org/</a></footer>
+          </blockquote>
+        </section>
+        <section>
+          <h2>Build with musl: setup</h2>
+          <pre><code data-trim>
+rustup target add x86_64-unknown-linux-musl
+
+# compile or install a musl package
+# containing library and headers
+          </code></pre>
+        </section>
+        <section>
+          <h2>Build with musl</h2>
+          <pre><code data-trim>
+cargo build --release --target=x86_64-unknown-linux-musl
+          </code></pre>
+        </section>
+        <section>
+          <h2>Statically build hab program</h2>
+          <pre><code data-trim>
+export LIBARCHIVE_LIB_DIR=/usr/local/lib
+export LIBARCHIVE_INCLUDE_DIR=/usr/local/include
+export LIBARCHIVE_LDFLAGS="-L/usr/local/lib -lz -llzma ..."
+export LIBARCHIVE_STATIC=true
+export OPENSSL_LIB_DIR=/usr/local/lib
+export OPENSSL_INCLUDE_DIR=/usr/local/include
+export OPENSSL_STATIC=true
+export SODIUM_LIB_DIR=/usr/local/lib
+export SODIUM_STATIC=true
+
+cargo build --release --target=x86_64-unknown-linux-musl
+          </code></pre>
+        </section>
+        <section>
+          <h2>Static binary: no external dependencies!</h2>
+          <pre><code data-trim class="line-numbers">
+> file target/x86_64-unknown-linux-musl/release/hab
+target/x86_64-unknown-linux-musl/hab: ELF 64-bit LSB »
+  executable, x86-64, version 1 (GNU/Linux), »
+  statically linked, stripped
+
+
+> ldd target/x86_64-unknown-linux-musl/release/hab
+        not a dynamic executable
+
+
+> du -h target/x86_64-unknown-linux-musl/release/hab
+7.6M    target/x86_64-unknown-linux-musl/release/hab
+          </code></pre>
+        </section>
+        <section class="title" data-background-image="img/habitat-rain-forest--FFs9wG.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/FFs9wG -->
+          <h2>The "Mono-Repo"</h2>
+          <p>(Many software components in one repository)</p>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>Habitat <code>components</code> Directory</h2>
+          <pre><code data-trim>
+.
+├── components
+│   ├── backline
+│   ├── builder-admin
+│   ├── builder-admin-proxy
+...
+│   ├── butterfly
+│   ├── butterfly-test
+│   ├── common
+│   ├── core
+...
+│   ├── ruby-client
+│   ├── studio
+│   ├── sup
+│   └── win-users
+          </code></pre>
+        </section>
+        <section class="title" data-background-image="img/habitat-mossy-moss--3WeJD.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/3WeJD -->
+          <h2>Share build outputs and lockfile</h2>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>Cargo workspaces</h2>
+          <blockquote>
+            <p>A workspace is a set of packages that will all share the same Cargo.lock and output directory.</p>
+            <footer>- <a href="https://doc.rust-lang.org/beta/book/second-edition/ch14-03-cargo-workspaces.html">The Rust Programming Language, 2nd Ed.</a></footer>
+          </blockquote>
+        </section>
+        <section>
+          <h2>Cargo.toml</h2>
+          <pre><code data-trim>
+[workspace]
+members = [
+  "components/builder-admin",
+  "components/builder-api",
+  "components/builder-core",
+  ...
+  "components/butterfly",
+  "components/butterfly-test",
+  "components/common",
+  ...
+  "components/hab",
+  "components/http-client",
+  "components/net",
+  "components/sup",
+]
+          </code></pre>
+        </section>
+        <section>
+          <h2>components/hab/Cargo.toml</h2>
+          <pre><code data-trim class="line-numbers">
+[package]
+name = "hab"
+version = "0.0.0"
+build = "../build.rs"
+workspace = "../../"
+          </code></pre>
+        </section>
+        <section class="title" data-background-image="img/habitat-bird-nest--3WeJD.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/vVud3 -->
+          <h2>Common versioning</h2>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>components/build.rs (1/2)</h2>
+          <pre><code data-trim class="line-numbers">
+fn main() {
+    let version = match env::var("PLAN_VERSION") {
+        Ok(ver) => ver,
+        _ => read_version(),
+    };
+    let mut f = File::create(
+        Path::new(&env::var("OUT_DIR").unwrap())
+            .join("VERSION")).unwrap();
+    f.write_all(version.trim().as_bytes()).unwrap();
+}
+          </code></pre>
+        </section>
+        <section>
+          <h2>components/build.rs (2/2)</h2>
+          <pre><code data-trim class="line-numbers">
+fn read_version() -> String {
+    let ver_file = Path::new(
+        &env::var("CARGO_MANIFEST_DIR").unwrap())
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("VERSION");
+    let f = File::open(ver_file).unwrap();
+    let mut reader = BufReader::new(f);
+    let mut ver = String::new();
+    reader.read_line(&mut ver).unwrap();
+    ver
+}
+          </code></pre>
+        </section>
+        <section>
+          <h2>components/hab/src/lib.rs</h2>
+          <pre><code data-trim>
+pub const VERSION: &'static str =
+    include_str!(concat!(env!("OUT_DIR"), "/VERSION"));'
+          </code></pre>
+        </section>
+        <section class="title" data-background-image="img/habitat-sunflowers--o24X7M.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/o24X7M -->
+          <h2>Crate dependencies</h2>
+          <aside class="notes">
+            <ul>
+              <li>we use cargo dependencies to have only 1 lock file</li>
+              <li>we do things a little differently, we usually don't version constrain crates</li>
+              <li>it makes it easier to bump dependencies</li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>components/sup/Cargo.toml</h2>
+          <pre><code data-trim>
+[dependencies]
+ansi_term = "*"
+bitflags = "*"
+byteorder = "*"
+clap = { version = "*", features = [ "suggestions", "color", "unstable" ] }
+env_logger = "*"
+features = "*"
+glob = "*"
+habitat_butterfly = { path = "../butterfly" }
+habitat_common = { path = "../common" }
+...
+          </code></pre>
+        </section>
+        <section class="title" data-background-image="img/habitat-cactus--5EahEE.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/5EahEE -->
+          <h2>Dependency strategy: aggressive</h2>
+          <aside class="notes">
+            <ul>
+              <li>as a company, as a project, as a team we believe in CI and CD</li>
+              <li>we are also a young project, we want to move fast</li>
+              <li>therefore we aggresively upgrade: Rust, crates, system libraries</li>
+              <li>if possible, consume the latest</li>
+            </ul>
+          </aside>
+        </section>
+        <section data-background-image="img/bump-rust-dep.png" data-background-size="60%">
+          <aside class="notes">
+            <ul>
+              <li>we started with Rust 1.6.0 or earlier probably</li>
+              <li>Rust upgrades usually incur a warning before api changes</li>
+            </ul>
+          </aside>
+        </section>
+        <section data-background-image="img/bump-crate-deps.png" data-background-size="60%">
+          <aside class="notes">
+            <ul>
+              <li>crates in general are fantastic quality and generally don't break between versions</li>
+              <li>we rarely need to pin crate versions</li>
+            </ul>
+          </aside>
+        </section>
+        <section class="title" data-background-image="img/habitat-creek--rjCvmX.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/rjCvmX -->
+          <h2>Cross platform codebase</h2>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>Cross platform tips</h2>
+          <ul>
+            <li class="fragment">Centralize conditional code into a few places</li>
+            <li class="fragment">Keep public API calls consistent, if possible</li>
+            <li class="fragment">Read the Rust codebase, it has great examples!</li>
+          </ul>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>components/core/src/os/filesystem/mod.rs</h2>
+          <pre><code data-trim class="line-numbers">
+#[cfg(windows)]
+mod windows;
+
+#[cfg(windows)]
+pub use self::windows::{chown, chmod, symlink};
+
+#[cfg(not(windows))]
+mod linux;
+
+#[cfg(not(windows))]
+pub use self::linux::{chown, chmod, symlink};
+          </code></pre>
+        </section>
+        <section>
+          <h2>components/core/src/os/filesystem/linux.rs</h2>
+          <pre><code data-trim class="line-numbers">
+use libc::{self, c_int, c_char, mode_t};
+
+pub use std::os::unix::fs::symlink;
+use std::ffi::CString;
+
+pub fn chown(path: &str, uid: u32, gid: u32) -> Result&lt;c_int> {
+    // ...
+}
+
+pub fn chmod(path: &str, mode: u32) -> Result&lt;c_int> {
+    // ...
+}
+          </code></pre>
+        </section>
+        <section>
+          <h2>components/core/src/os/filesystem/windows.rs</h2>
+          <pre><code data-trim class="line-numbers">
+// ...
+
+pub fn chown(path: &str, uid: String, gid: String)
+      -> Result&lt;c_int> {
+    path_exists(path)
+}
+
+pub fn chmod(path: &str, mode: u32)-> Result&lt;c_int> {
+    path_exists(path)
+}
+
+pub fn symlink&lt;P: AsRef&lt;Path>, Q: AsRef&lt;Path>>(src: P, dst: Q)
+        -> io::Result<()> {
+    unimplemented!();
+}
+          </code></pre>
+        </section>
+        <!-- <section class="title" data-background-image="img/habitat-desert-rose--NCVgxq.jpg" data-state="fade-bg"> -->
+        <!--   <1!-- https://flic.kr/p/NCVgxq --1> -->
+        <!--   <h2>Inlining dependencies</h2> -->
+        <!--   <aside class="notes"> -->
+        <!--     <ul> -->
+        <!--       <li></li> -->
+        <!--     </ul> -->
+        <!--   </aside> -->
+        <!-- </section> -->
+        <!-- <section> -->
+        <!--   <h2>components/http-client/build.rs</h2> -->
+        <!--   <pre><code data-trim class="line-numbers"> -->
+<!-- fn main() { -->
+    <!-- inner::main() -->
+<!-- } -->
+
+<!-- #[cfg(not(target_os = "macos"))] -->
+<!-- mod inner { -->
+    <!-- pub fn main() { -->
+        <!-- let src = env::var("SSL_CERT_FILE").unwrap(); -->
+        <!-- let dst = Path::new(&env::var("OUT_DIR").unwrap()) -->
+        <!--     .join("cacert.pem"); -->
+        <!-- if !dst.exists() { -->
+        <!--     fs::copy(src, dst).unwrap(); -->
+        <!-- } -->
+    <!-- } -->
+<!-- } -->
+        <!--   </code></pre> -->
+        <!-- </section> -->
+        <!-- <section> -->
+        <!--   <h2>components/http-client/src/lib.rs (1/2)</h2> -->
+        <!--   <pre><code data-trim> -->
+<!-- const CACERT_PEM: &'static str = -->
+    <!-- include_str!(concat!(env!("OUT_DIR"), "/cacert.pem")); -->
+        <!--   </code></pre> -->
+        <!-- </section> -->
+        <!-- <section> -->
+        <!--   <h2>components/http-client/src/lib.rs (2/2)</h2> -->
+        <!--   <pre><code data-trim class="line-numbers"> -->
+<!-- // Check first for other ways to find CA certs... -->
+
+<!-- if !cached_certs.exists() { -->
+    <!-- try!(fs::create_dir_all(cache_ssl_path(fs_root_path))); -->
+    <!-- debug!("Creating cached cacert.pem at: {}", -->
+        <!-- cached_certs.display()); -->
+    <!-- let mut file = try!(File::create(&cached_certs)); -->
+    <!-- try!(file.write_all(CACERT_PEM.as_bytes())); -->
+<!-- } -->
+        <!--   </code></pre> -->
+        <!-- </section> -->
+        <section class="title" data-background-image="img/habitat-mountain-path--wpkGK1.jpg" data-state="fade-bg">
+          <!-- https://flic.kr/p/wpkGK1 -->
+          <h2>Onboarding team members</h2>
+        </section>
+        <section class="title" data-background-image="img/pencil-dive.gif" data-state="fade-bg">
+        </section>
+        <section>
+          <h2>Onboarding tips</h2>
+          <ul>
+            <li class="fragment">Give new members time and space to learn, experiment, ask questions</li>
+            <li class="fragment">Pair on features</li>
+            <li class="fragment">Talk about architecture and code's "point of view"</li>
+            <li class="fragment">Talk about <code>.unwrap()</code> and <code>.expect()</code></li>
+            <li class="fragment">Be patient--it gets really good if you put the time in!</li>
+          </ul>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+    <section class="title" data-background-image="img/barbed-wire--JyrwWM.jpg" data-state="fade-bg">
+      <!-- https://flic.kr/p/JyrwWM -->
+      <h1>Rust pain points</h1>
+      <aside class="notes">
+        <h1>20:00</h1>
+      </aside>
+    </section>
+        <section>
+          <h2>Slow compile times</h2>
+          <aside class="notes">
+            <ul>
+              <li>Larger components take longer</li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>Hint: Cargo workspaces</h2>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>Cross platform code paths</h2>
+          <aside class="notes">
+            <ul>
+              <li>easy to forget non-Linux code paths when working on Linux code</li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>Hint: Continuous Integration</h2>
+          <aside class="notes">
+            <ul>
+              <li></li>
+            </ul>
+          </aside>
+        </section>
+        <!-- <section> -->
+        <!--   <h2>Supervisor function testing still hard</h2> -->
+        <!--   <aside class="notes"> -->
+        <!--     <ul> -->
+        <!--       <li>the Supervisor uses absolute paths, root privileges, a package depot, etc.</li> -->
+        <!--       <li>other testing getting much better, like the database suites</li> -->
+        <!--     </ul> -->
+        <!--   </aside> -->
+        <!-- </section> -->
+        <!-- <section> -->
+        <!--   <h2>Hint: Improve the code, a little each time</h2> -->
+        <!--   <aside class="notes"> -->
+        <!--     <ul> -->
+        <!--       <li>we look for places to better factor, decompose and test smaller units</li> -->
+        <!--       <li></li> -->
+        <!--     </ul> -->
+        <!--   </aside> -->
+        <!-- </section> -->
+        <section>
+          <h2>Rust is too fast?</h2>
+          <aside class="notes">
+            <ul>
+              <li>can be surprisingly fast</li>
+              <li>generating origin keys in unit tests, named with revision to the second</li>
+              <li>Supervisor boot process can happen quicker than Butterfly (gossip) boot, then they race</li>
+              <li>initially we could pin the CPU in the main loop without any blocking or thread sleep</li>
+            </ul>
+          </aside>
+        </section>
+        <section>
+          <h2>Hint: Think about synchronization points</h2>
+          <aside class="notes">
+            <ul>
+              <li>in tests, we've used "wait until" helpers</li>
+              <li>use rendezvous-style channels to ensure all parts are ready</li>
+            </ul>
+          </aside>
+        </section>
+    <section class="title" data-background-image="img/rust-iii--FXWdxt.jpg" data-state="fade-bg" data-background-size="85%">
+      <!-- https://flic.kr/p/FXWdxt -->
+      <h2>Wrapping up</h2>
+      <aside class="notes">
+        <h1>23:00</h1>
+      </aside>
+    </section>
+      <section>
+        <h1>Is Rust ready to be used in production?</h1>
+        <h2>Yes, you bet.</h2>
+      </section>
+        <section class="title" data-background-image="img/join-habislack.png" data-state="fade-bg" data-background-size="85%">
+          <h2><a href="http://slack.habitat.sh/">http://slack.habitat.sh/</a></h2>
+        </section>
+      <section class="title" data-background-image="img/rust-iii--FXWdxt.jpg" data-state="fade-bg">
+        <h1>Thank you!</h1>
+        <table style="background-color: #fff; opacity: 0.85;">
+          <tr>
+            <td style="color: #000;">Fletcher Nichol</td>
+            <td style="color: #000;"><a href="https://twitter.com/fnichol">@fnichol</a></td>
+            <td style="color: #000;"><a href="https://www.habitat.sh">habitat.sh</a></td>
+          </tr>
+          <tr style="font-size: 0.5em">
+            <td>
+            <ul>
+              <li><a href="https://flic.kr/p/bnwQ5E">https://flic.kr/p/bnwQ5E</a></li>
+              <li><a href="https://flic.kr/p/T1jK1F">https://flic.kr/p/T1jK1F</a></li>
+              <li><a href="https://flic.kr/p/eHXRWD">https://flic.kr/p/eHXRWD</a></li>
+              <li><a href="https://flic.kr/p/nvSubP">https://flic.kr/p/nvSubP</a></li>
+              <li><a href="https://flic.kr/p/7P5HSL">https://flic.kr/p/7P5HSL</a></li>
+              <li><a href="https://flic.kr/p/cV2xbb">https://flic.kr/p/cV2xbb</a></li>
+              <li><a href="https://flic.kr/p/FFs9wG">https://flic.kr/p/FFs9wG</a></li>
+              <li><a href="https://flic.kr/p/3WeJD">https://flic.kr/p/3WeJD</a></li>
+            </ul>
+            </td>
+            <td>&nbsp;</th>
+            <td>
+            <ul>
+              <li><a href="https://flic.kr/p/o24X7M">https://flic.kr/p/o24X7M</a></li>
+              <li><a href="https://flic.kr/p/5EahEE">https://flic.kr/p/5EahEE</a></li>
+              <li><a href="https://flic.kr/p/rjCvmX">https://flic.kr/p/rjCvmX</a></li>
+              <li><a href="https://flic.kr/p/NCVgxq">https://flic.kr/p/NCVgxq</a></li>
+              <li><a href="https://flic.kr/p/wpkGK1">https://flic.kr/p/wpkGK1</a></li>
+              <li><a href="https://flic.kr/p/JyrwWM">https://flic.kr/p/JyrwWM</a></li>
+              <li><a href="https://flic.kr/p/FXWdxt">https://flic.kr/p/FXWdxt</a></li>
+              <li><a href="https://flic.kr/p/FXWdxt">https://flic.kr/p/FXWdxt</a></li>
+            </ul>
+            </td>
+          </tr>
+        </table>
+        <aside class="notes">
+          <h1>25:00</h1>
+        </aside>
+      </section>
+      </div>
+    </div>
+
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+
+    <script>
+      // More info https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        history: true,
+        controls: false,
+        progress: false,
+        transition: 'fade',
+
+        // More info https://github.com/hakimel/reveal.js#dependencies
+        dependencies: [
+          { src: 'plugin/markdown/marked.js' },
+          { src: 'plugin/markdown/markdown.js' },
+          { src: 'plugin/notes/notes.js', async: true },
+          { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+          { src: 'plugin/line-numbers/line-numbers.js' }
+        ]
+      });
+    </script>
+  </body>
 </html>
