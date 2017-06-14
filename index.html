@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <title>reveal.js</title>
+    <title>RustFest 2017 Talk "Taking Rust To Production: Lessons Learned From The Habitat Project" by Fletcher Nichol</title>
 
     <link rel="stylesheet" href="css/reveal.css">
     <link rel="stylesheet" href="css/theme/rustfest2017.css">
@@ -137,7 +137,7 @@
         </section>
         <section>
           <h2>It's a growing codebase</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="line-numbers sh">
 > date
 Fri 28 Apr 2017 10:48:21 EEST
 
@@ -207,13 +207,13 @@ Fri 28 Apr 2017 10:48:21 EEST
         </section>
         <section>
           <h2>Build a dynamic binary</h2>
-          <pre><code data-trim>
+          <pre><code data-trim class="sh">
 cargo build --release
           </code></pre>
         </section>
         <section>
           <h2>Dynamic binary: file</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="sh line-numbers">
 > file target/x86_64-unknown-linux-gnu/release/hab
 target/x86_64-unknown-linux-gnu/release/hab: ELF 64-bit LSB »
   shared object, x86-64, version 1 (SYSV), »
@@ -225,7 +225,7 @@ target/x86_64-unknown-linux-gnu/release/hab: ELF 64-bit LSB »
         </section>
         <section>
           <h2>Dynamic binary: ldd</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="sh line-numbers">
 > ldd target/x86_64-unknown-linux-gnu/release/hab
     linux-vdso.so.1 (0x00007ffd2c66b000)
     libssl.so.1.0.0 => /lib/x86_64-linux-gnu/libssl.so.1.0.0 (0x00007f6d524c4000)
@@ -249,7 +249,7 @@ target/x86_64-unknown-linux-gnu/release/hab: ELF 64-bit LSB »
         </section>
         <section>
           <h2>Build with musl: setup</h2>
-          <pre><code data-trim>
+          <pre><code data-trim class="sh">
 rustup target add x86_64-unknown-linux-musl
 
 # compile or install a musl package
@@ -258,13 +258,13 @@ rustup target add x86_64-unknown-linux-musl
         </section>
         <section>
           <h2>Build with musl</h2>
-          <pre><code data-trim>
+          <pre><code data-trim class="sh">
 cargo build --release --target=x86_64-unknown-linux-musl
           </code></pre>
         </section>
         <section>
           <h2>Statically build hab program</h2>
-          <pre><code data-trim>
+          <pre><code data-trim class="sh">
 export LIBARCHIVE_LIB_DIR=/usr/local/lib
 export LIBARCHIVE_INCLUDE_DIR=/usr/local/include
 export LIBARCHIVE_LDFLAGS="-L/usr/local/lib -lz -llzma ..."
@@ -280,7 +280,7 @@ cargo build --release --target=x86_64-unknown-linux-musl
         </section>
         <section>
           <h2>Static binary: no external dependencies!</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="sh line-numbers">
 > file target/x86_64-unknown-linux-musl/release/hab
 target/x86_64-unknown-linux-musl/hab: ELF 64-bit LSB »
   executable, x86-64, version 1 (GNU/Linux), »
@@ -307,7 +307,7 @@ target/x86_64-unknown-linux-musl/hab: ELF 64-bit LSB »
         </section>
         <section>
           <h2>Habitat <code>components</code> Directory</h2>
-          <pre><code data-trim>
+          <pre><code data-trim class="sh">
 .
 ├── components
 │   ├── backline
@@ -343,7 +343,7 @@ target/x86_64-unknown-linux-musl/hab: ELF 64-bit LSB »
         </section>
         <section>
           <h2>Cargo.toml</h2>
-          <pre><code data-trim>
+          <pre><code data-trim class="toml">
 [workspace]
 members = [
   "components/builder-admin",
@@ -363,7 +363,7 @@ members = [
         </section>
         <section>
           <h2>components/hab/Cargo.toml</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="toml line-numbers">
 [package]
 name = "hab"
 version = "0.0.0"
@@ -382,7 +382,7 @@ workspace = "../../"
         </section>
         <section>
           <h2>components/build.rs (1/2)</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="rust line-numbers">
 fn main() {
     let version = match env::var("PLAN_VERSION") {
         Ok(ver) => ver,
@@ -397,7 +397,7 @@ fn main() {
         </section>
         <section>
           <h2>components/build.rs (2/2)</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="rust line-numbers">
 fn read_version() -> String {
     let ver_file = Path::new(
         &env::var("CARGO_MANIFEST_DIR").unwrap())
@@ -416,7 +416,7 @@ fn read_version() -> String {
         </section>
         <section>
           <h2>components/hab/src/lib.rs</h2>
-          <pre><code data-trim>
+          <pre><code data-trim class="rust">
 pub const VERSION: &'static str =
     include_str!(concat!(env!("OUT_DIR"), "/VERSION"));'
           </code></pre>
@@ -434,7 +434,7 @@ pub const VERSION: &'static str =
         </section>
         <section>
           <h2>components/sup/Cargo.toml</h2>
-          <pre><code data-trim>
+          <pre><code data-trim class="toml">
 [dependencies]
 ansi_term = "*"
 bitflags = "*"
@@ -500,7 +500,7 @@ habitat_common = { path = "../common" }
         </section>
         <section>
           <h2>components/core/src/os/filesystem/mod.rs</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="rust line-numbers">
 #[cfg(windows)]
 mod windows;
 
@@ -516,7 +516,7 @@ pub use self::linux::{chown, chmod, symlink};
         </section>
         <section>
           <h2>components/core/src/os/filesystem/linux.rs</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="rust line-numbers">
 use libc::{self, c_int, c_char, mode_t};
 
 pub use std::os::unix::fs::symlink;
@@ -533,7 +533,7 @@ pub fn chmod(path: &str, mode: u32) -> Result&lt;c_int> {
         </section>
         <section>
           <h2>components/core/src/os/filesystem/windows.rs</h2>
-          <pre><code data-trim class="line-numbers">
+          <pre><code data-trim class="rust line-numbers">
 // ...
 
 pub fn chown(path: &str, uid: String, gid: String)
